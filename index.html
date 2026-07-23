@@ -84,8 +84,16 @@ body.dark .douban-card .text-gray-500 { color: #9ca3af !important; }
 
 <header class="bg-gradient-to-r from-brand to-red-700 text-white">
   <div class="max-w-6xl mx-auto px-4 py-6 sm:py-8">
-    <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">春节档电影查询</h1>
-    <p class="text-red-100 text-sm sm:text-base mt-1">2000 – 2026 年中国大陆春节档院线电影信息</p>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h1 id="mainTitle" class="text-2xl sm:text-3xl font-bold tracking-wide">春节档电影查询</h1>
+        <p id="mainSubtitle" class="text-red-100 text-sm sm:text-base mt-1">2000 – 2026 年中国大陆春节档院线电影信息</p>
+      </div>
+      <div class="flex bg-white/15 rounded-xl p-1 backdrop-blur-sm">
+        <button id="btnSpringFestival" onclick="switchPeriod('spring')" class="px-5 py-2 rounded-lg text-sm font-medium transition-all bg-white text-brand shadow-sm">春节档</button>
+        <button id="btnNationalDay" onclick="switchPeriod('national')" class="px-5 py-2 rounded-lg text-sm font-medium transition-all text-white/80 hover:text-white">国庆档</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -250,8 +258,11 @@ body.dark .douban-card .text-gray-500 { color: #9ca3af !important; }
 </div>
 
 <script src="data.js"></script>
+<script src="nationalDay.js"></script>
 <script>
 let springFestivalMovies = [];
+let nationalDayMovies = [];
+let currentPeriod = 'spring';
 let currentYear = 'all';
 let currentGenre = 'all';
 let currentSort = 'year-desc';
@@ -267,16 +278,51 @@ const PAGE_SIZE = 10;
 async function loadData() {
   if (typeof INLINE_DATA !== 'undefined') {
     springFestivalMovies = INLINE_DATA;
-    return;
+  } else {
+    try {
+      const resp = await fetch('data.json');
+      if (!resp.ok) throw new Error('加载失败');
+      springFestivalMovies = await resp.json();
+    } catch (e) {
+      console.error('加载春节档数据失败:', e);
+    }
   }
-  try {
-    const resp = await fetch('data.json');
-    if (!resp.ok) throw new Error('加载数据失败');
-    springFestivalMovies = await resp.json();
-  } catch (e) {
-    console.error('加载 data.json 失败:', e);
-    springFestivalMovies = [];
+  if (typeof NATIONAL_DAY_DATA !== 'undefined') {
+    nationalDayMovies = NATIONAL_DAY_DATA;
   }
+}
+
+function getActiveMovies() {
+  return currentPeriod === 'spring' ? springFestivalMovies : nationalDayMovies;
+}
+
+function switchPeriod(period) {
+  currentPeriod = period;
+  const btnSpring = document.getElementById('btnSpringFestival');
+  const btnNational = document.getElementById('btnNationalDay');
+  const titleEl = document.getElementById('mainTitle');
+  const subtitleEl = document.getElementById('mainSubtitle');
+  if (period === 'spring') {
+    btnSpring.className = 'px-5 py-2 rounded-lg text-sm font-medium transition-all bg-white text-brand shadow-sm';
+    btnNational.className = 'px-5 py-2 rounded-lg text-sm font-medium transition-all text-white/80 hover:text-white';
+    titleEl.textContent = '春节档电影查询';
+    subtitleEl.textContent = '2000 – 2026 年中国大陆春节档院线电影信息';
+  } else {
+    btnNational.className = 'px-5 py-2 rounded-lg text-sm font-medium transition-all bg-white text-brand shadow-sm';
+    btnSpring.className = 'px-5 py-2 rounded-lg text-sm font-medium transition-all text-white/80 hover:text-white';
+    titleEl.textContent = '国庆档电影查询';
+    subtitleEl.textContent = '2000 – 2026 年中国大陆国庆档院线电影信息';
+  }
+  currentYear = 'all';
+  currentGenre = 'all';
+  searchKeyword = '';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('yearSelect').value = 'all';
+  document.getElementById('genreSelect').value = 'all';
+  currentPage = 1;
+  initYearSelect();
+  initGenreSelect();
+  renderTable();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -292,7 +338,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function initYearSelect() {
   const yearSelect = document.getElementById('yearSelect');
-  const years = [...new Set(springFestivalMovies.map(m => m.year))].sort((a, b) => b - a);
+  const movies = getActiveMovies();
+  yearSelect.innerHTML = '<option value="all">全部年份</option>';
+  const years = [...new Set(movies.map(m => m.year))].sort((a, b) => b - a);
   years.forEach(y => {
     const opt = document.createElement('option');
     opt.value = y;
@@ -303,7 +351,9 @@ function initYearSelect() {
 
 function initGenreSelect() {
   const genreSelect = document.getElementById('genreSelect');
-  const genres = [...new Set(springFestivalMovies.map(m => m.genre))].sort();
+  const movies = getActiveMovies();
+  genreSelect.innerHTML = '<option value="all">全部类型</option>';
+  const genres = [...new Set(movies.map(m => m.genre))].sort();
   genres.forEach(g => {
     const opt = document.createElement('option');
     opt.value = g;
@@ -432,9 +482,9 @@ function toggleView() {
 
 function renderAnnualView() {
   const grid = document.getElementById('annualGrid');
-  const years = [...new Set(springFestivalMovies.map(m => m.year))].sort((a, b) => b - a);
+  const years = [...new Set(getActiveMovies().map(m => m.year))].sort((a, b) => b - a);
   grid.innerHTML = years.map(year => {
-    const movies = springFestivalMovies.filter(m => m.year === year);
+    const movies = getActiveMovies().filter(m => m.year === year);
     const totalBox = movies.reduce((sum, m) => sum + (m.boxOffice > 0 ? m.boxOffice : 0), 0);
     const champion = movies.reduce((best, m) => {
       if (m.boxOffice > 0 && (!best || m.boxOffice > best.boxOffice)) return m;
@@ -494,7 +544,7 @@ function onSelectAllChange(e) {
 }
 
 function getFilteredData() {
-  let list = [...springFestivalMovies];
+  let list = [...getActiveMovies()];
   if (currentYear !== 'all') list = list.filter(m => m.year === currentYear);
   if (currentGenre !== 'all') list = list.filter(m => m.genre === currentGenre);
   if (searchKeyword) {
@@ -641,7 +691,7 @@ function renderPosterCanvas(movie, w, h) {
 }
 
 function openPosterLightbox(movieName) {
-  const movie = springFestivalMovies.find(m => m.movieName === movieName);
+  const movie = getActiveMovies().find(m => m.movieName === movieName);
   if (!movie) return;
   const img = document.getElementById('lightboxImg');
   if (movie.poster && movie.poster.trim()) {
@@ -738,7 +788,7 @@ function goPage(page) {
 }
 
 function showDetail(movieName) {
-  const movie = springFestivalMovies.find(m => m.movieName === movieName);
+  const movie = getActiveMovies().find(m => m.movieName === movieName);
   if (!movie) return;
   document.getElementById('modalTitle').textContent = movie.movieName;
   const isFav = favorites.has(movie.movieName);
@@ -851,7 +901,7 @@ function updateCompareBtn() {
 }
 
 function openCompareModal() {
-  const movies = [...compareSet].map(name => springFestivalMovies.find(m => m.movieName === name)).filter(Boolean);
+  const movies = [...compareSet].map(name => getActiveMovies().find(m => m.movieName === name)).filter(Boolean);
   if (movies.length < 2) return;
   const content = document.getElementById('compareContent');
   const cols = movies.map(m => {
