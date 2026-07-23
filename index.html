@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>春节档电影查询 — 2000-2026</title>
+
+<!-- TailwindCSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#c41e3a', light: '#fef0f2' }
+      }
+    }
+  }
+}
+</script>
+
+<style>
+.table-wrap { -webkit-overflow-scrolling: touch; }
+.movie-row:active { background: #fef0f2; }
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+body.dark { background-color: #111827; color: #f9fafb; }
+body.dark .bg-white { background-color: #1f2937 !important; }
+body.dark .bg-gray-50 { background-color: #374151 !important; }
+body.dark .bg-gray-100 { background-color: #374151 !important; }
+body.dark .text-gray-800 { color: #f9fafb !important; }
+body.dark .text-gray-700 { color: #e5e7eb !important; }
+body.dark .text-gray-600 { color: #d1d5db !important; }
+body.dark .text-gray-500 { color: #9ca3af !important; }
+body.dark .text-gray-400 { color: #9ca3af !important; }
+body.dark .border-gray-100 { border-color: #374151 !important; }
+body.dark .border-gray-200 { border-color: #374151 !important; }
+body.dark .border-gray-300 { border-color: #4b5563 !important; }
+body.dark select { background-color: #374151; color: #f9fafb; border-color: #4b5563;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23aaa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+body.dark select option { background-color: #374151; color: #f9fafb; }
+body.dark input { background-color: #374151 !important; color: #f9fafb !important; border-color: #4b5563 !important; }
+body.dark input::placeholder { color: #9ca3af !important; }
+body.dark .hover\:bg-gray-50:hover { background-color: #374151 !important; }
+body.dark .hover\:bg-gray-100:hover { background-color: #4b5563 !important; }
+body.dark .movie-row:active { background: #374151 !important; }
+body.dark footer { color: #6b7280; }
+body.dark #modalOverlay > div { background-color: #1f2937; }
+body.dark #modalOverlay > div > div:first-child { border-color: #374151 !important; }
+body.dark #modalOverlay .text-gray-800 { color: #f9fafb !important; }
+body.dark #modalContent .text-gray-700 { color: #e5e7eb !important; }
+body.dark #modalContent .text-gray-400 { color: #9ca3af !important; }
+body.dark .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.3); }
+body.dark .annual-card { background-color: #1f2937 !important; border-color: #374151 !important; }
+body.dark .annual-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4); }
+body.dark #reviewCarousel .text-gray-500 { color: #9ca3af !important; }
+body.dark #reviewCarousel { background-color: transparent; }
+body.dark .douban-card { background: linear-gradient(to bottom, #422006, #1f2937) !important; border-color: #92400e !important; }
+body.dark .douban-card .text-gray-700 { color: #f9fafb !important; }
+body.dark .douban-card .text-gray-500 { color: #9ca3af !important; }
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  opacity: 0; transition: opacity 0.3s, transform 0.3s;
+  z-index: 200; pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-gradient-to-r from-brand to-red-700 text-white">
+  <div class="max-w-6xl mx-auto px-4 py-6 sm:py-8">
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-wide">春节档电影查询</h1>
+    <p class="text-red-100 text-sm sm:text-base mt-1">2000 – 2026 年中国大陆春节档院线电影信息</p>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-5 sm:py-8">
+  <div class="flex items-center justify-end mb-4 gap-2">
+    <button id="darkToggle" title="切换暗黑模式"
+      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors text-gray-600">
+      <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+      </svg>
+      <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+      </svg>
+    </button>
+    <button id="shareBtn" onclick="shareFilter()" title="分享当前筛选"
+      class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors text-gray-600">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
+    <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
+      <select id="yearSelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand sm:w-36">
+        <option value="all">全部年份</option>
+      </select>
+      <select id="genreSelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand sm:w-36">
+        <option value="all">全部类型</option>
+      </select>
+      <select id="sortSelect" class="border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand sm:w-44">
+        <option value="year-desc">年份 ↓</option>
+        <option value="year-asc">年份 ↑</option>
+        <option value="box-desc">票房 ↓</option>
+        <option value="box-asc">票房 ↑</option>
+      </select>
+      <div class="flex-1 flex">
+        <button id="searchModeBtn" onclick="toggleSearchMode()" title="切换搜索模式"
+          class="border border-r-0 border-gray-300 rounded-l-lg px-3 py-2.5 text-sm bg-gray-50 hover:bg-gray-100 transition-colors text-gray-600 shrink-0"
+          data-mode="name">片名</button>
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input id="searchInput" type="text" placeholder="搜索片名..."
+            class="w-full border border-gray-300 rounded-r-lg pl-10 pr-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand">
+        </div>
+      </div>
+      <label class="inline-flex items-center gap-1.5 border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 bg-white hover:bg-gray-50 cursor-pointer sm:shrink-0 select-none whitespace-nowrap">
+        <input type="checkbox" id="favOnly" class="w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand/30 accent-red-500">
+        <span>仅看收藏</span>
+      </label>
+      <button id="exportBtn" class="inline-flex items-center justify-center gap-2 bg-white border border-gray-300 rounded-lg px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 active:bg-gray-100 transition-colors sm:shrink-0">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        导出
+      </button>
+    </div>
+  </div>
+
+  <div id="statsCard" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+      <div class="text-xs text-gray-400 mb-1">电影总数</div>
+      <div id="statTotal" class="text-2xl font-bold text-gray-800">0</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+      <div class="text-xs text-gray-400 mb-1">总票房</div>
+      <div id="statBoxOffice" class="text-2xl font-bold text-brand">0 亿</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+      <div class="text-xs text-gray-400 mb-1">票房冠军</div>
+      <div id="statChampion" class="text-lg font-bold text-gray-800 truncate">-</div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 text-center">
+      <div class="text-xs text-gray-400 mb-1">平均票房</div>
+      <div id="statAvg" class="text-2xl font-bold text-gray-800">0 亿</div>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between mb-3">
+    <span id="resultCount" class="text-sm text-gray-500">共 0 条记录</span>
+    <button id="compareBtn" onclick="openCompareModal()"
+      class="hidden items-center gap-1.5 bg-brand text-white text-sm font-medium rounded-lg px-4 py-2 hover:bg-red-700 active:bg-red-800 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      对比 <span id="compareCount"></span>
+    </button>
+  </div>
+
+  <div id="chartCard" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5 hidden">
+    <h3 class="text-sm font-medium text-gray-500 mb-2">春节档总票房趋势</h3>
+    <div style="height:250px"><canvas id="trendChart"></canvas></div>
+  </div>
+
+  <div id="tableView">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="table-wrap overflow-x-auto">
+        <table class="w-full min-w-[700px]">
+          <thead>
+            <tr class="bg-gray-50 text-left text-xs sm:text-sm text-gray-500 uppercase tracking-wider">
+              <th class="px-2 py-3 font-medium w-10">
+                <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand/30 accent-red-500 cursor-pointer">
+              </th>
+              <th class="px-2 py-3 font-medium hidden sm:table-cell">海报</th>
+              <th class="px-3 py-3 font-medium">片名</th>
+              <th class="px-3 py-3 font-medium">上映日期</th>
+              <th class="px-3 py-3 font-medium">导演 / 主演</th>
+              <th class="px-3 py-3 font-medium">类型</th>
+              <th class="px-3 py-3 font-medium">豆瓣</th>
+              <th class="px-3 py-3 font-medium text-right">票房</th>
+              <th class="px-3 py-3 font-medium hidden sm:table-cell">备注</th>
+              <th class="px-2 py-3 font-medium w-10"><span class="text-brand" title="收藏">♥</span></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pagination" class="flex items-center justify-center gap-1 mt-5 flex-wrap"></div>
+  </div>
+
+  <div id="annualView" class="hidden mt-5">
+    <div id="annualGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  </div>
+</main>
+
+<footer class="text-center text-xs text-gray-400 py-6">数据来源: 猫眼、灯塔专业版等公开数据 | 仅供参考</footer>
+
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-5 py-2.5 rounded-lg shadow-lg text-sm">链接已复制到剪贴板</div>
+
+<div id="modalOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 id="modalTitle" class="text-lg font-bold text-gray-800"></h3>
+      <button id="modalClose" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="modalContent" class="px-5 py-4"></div>
+  </div>
+</div>
+
+<div id="lightboxOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 cursor-zoom-out" role="dialog" aria-modal="true">
+  <button id="lightboxClose" class="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white z-10">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+  </button>
+  <img id="lightboxImg" class="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl animate-[scaleIn_0.2s_ease-out]" alt="" />
+</div>
+
+<div id="compareOverlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <h3 class="text-lg font-bold text-gray-800">电影对比</h3>
+      <button id="compareClose" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="compareContent" class="px-5 py-4 overflow-x-auto"></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+let springFestivalMovies = [];
+let currentYear = 'all';
+let currentGenre = 'all';
+let currentSort = 'year-desc';
+let searchKeyword = '';
+let searchMode = 'name';
+let currentPage = 1;
+let onlyFav = false;
+let trendChart = null;
+let favorites = new Set(JSON.parse(localStorage.getItem('springFestivalFavorites') || '[]'));
+let compareSet = new Set();
+const PAGE_SIZE = 10;
+
+async function loadData() {
+  if (typeof INLINE_DATA !== 'undefined') {
+    springFestivalMovies = INLINE_DATA;
+    return;
+  }
+  try {
+    const resp = await fetch('data.json');
+    if (!resp.ok) throw new Error('加载数据失败');
+    springFestivalMovies = await resp.json();
+  } catch (e) {
+    console.error('加载 data.json 失败:', e);
+    springFestivalMovies = [];
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadData();
+  applyUrlParams();
+  initYearSelect();
+  initGenreSelect();
+  initDarkMode();
+  renderTable();
+  bindEvents();
+  initChart();
+});
+
+function initYearSelect() {
+  const yearSelect = document.getElementById('yearSelect');
+  const years = [...new Set(springFestivalMovies.map(m => m.year))].sort((a, b) => b - a);
+  years.forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y + ' 年';
+    yearSelect.appendChild(opt);
+  });
+}
+
+function initGenreSelect() {
+  const genreSelect = document.getElementById('genreSelect');
+  const genres = [...new Set(springFestivalMovies.map(m => m.genre))].sort();
+  genres.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g;
+    opt.textContent = g;
+    genreSelect.appendChild(opt);
+  });
+}
+
+function initDarkMode() {
+  const dark = localStorage.getItem('springFestivalDark') === 'true';
+  if (dark) applyDark(true);
+}
+
+function applyDark(dark) {
+  document.body.classList.toggle('dark', dark);
+  document.getElementById('moonIcon').classList.toggle('hidden', dark);
+  document.getElementById('sunIcon').classList.toggle('hidden', !dark);
+}
+
+function toggleDark() {
+  const dark = !document.body.classList.contains('dark');
+  applyDark(dark);
+  localStorage.setItem('springFestivalDark', dark);
+}
+
+function toggleSearchMode() {
+  const btn = document.getElementById('searchModeBtn');
+  const input = document.getElementById('searchInput');
+  searchMode = searchMode === 'name' ? 'actor' : 'name';
+  btn.textContent = searchMode === 'name' ? '片名' : '演职';
+  btn.dataset.mode = searchMode;
+  input.placeholder = searchMode === 'name' ? '搜索片名...' : '搜索导演/主演...';
+  searchKeyword = '';
+  input.value = '';
+  currentPage = 1;
+  renderTable();
+}
+
+function onGenreChange(e) {
+  currentGenre = e.target.value;
+  currentPage = 1;
+  renderTable();
+}
+
+function onSortChange(e) {
+  currentSort = e.target.value;
+  currentPage = 1;
+  renderTable();
+}
+
+function shareFilter() {
+  const params = new URLSearchParams();
+  if (currentYear !== 'all') params.set('year', currentYear);
+  if (currentGenre !== 'all') params.set('genre', currentGenre);
+  if (searchKeyword) params.set('q', searchKeyword);
+  if (searchMode !== 'name') params.set('mode', searchMode);
+  if (currentSort !== 'year-desc') params.set('sort', currentSort);
+  if (onlyFav) params.set('fav', '1');
+  const url = location.origin + location.pathname + (params.toString() ? '?' + params.toString() : '');
+  navigator.clipboard.writeText(url).then(() => showToast('链接已复制到剪贴板'));
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function applyUrlParams() {
+  const params = new URLSearchParams(location.search);
+  if (params.has('year')) {
+    currentYear = params.get('year') === 'all' ? 'all' : Number(params.get('year'));
+    document.getElementById('yearSelect').value = params.get('year');
+  }
+  if (params.has('genre')) currentGenre = params.get('genre');
+  if (params.has('q')) {
+    searchKeyword = params.get('q').toLowerCase();
+    document.getElementById('searchInput').value = params.get('q');
+  }
+  if (params.has('mode')) searchMode = params.get('mode');
+  if (params.has('sort')) {
+    currentSort = params.get('sort');
+    document.getElementById('sortSelect').value = params.get('sort');
+  }
+  if (params.has('fav')) {
+    onlyFav = params.get('fav') === '1';
+    document.getElementById('favOnly').checked = onlyFav;
+  }
+}
+
+function bindEvents() {
+  document.getElementById('yearSelect').addEventListener('change', onYearChange);
+  document.getElementById('genreSelect').addEventListener('change', onGenreChange);
+  document.getElementById('sortSelect').addEventListener('change', onSortChange);
+  document.getElementById('searchInput').addEventListener('input', onSearchInput);
+  document.getElementById('exportBtn').addEventListener('click', exportCSV);
+  document.getElementById('favOnly').addEventListener('change', onFavOnlyChange);
+  document.getElementById('selectAll').addEventListener('change', onSelectAllChange);
+  document.getElementById('modalClose').addEventListener('click', closeDetail);
+  document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetail(); });
+  document.getElementById('compareClose').addEventListener('click', closeCompareModal);
+  document.getElementById('compareOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeCompareModal(); });
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxOverlay').addEventListener('click', e => { if (e.target === e.currentTarget || e.target.tagName === 'IMG') closeLightbox(); });
+  document.getElementById('darkToggle').addEventListener('click', toggleDark);
+  document.getElementById('shareBtn').addEventListener('click', shareFilter);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!document.getElementById('lightboxOverlay').classList.contains('hidden')) closeLightbox();
+      else if (!document.getElementById('compareOverlay').classList.contains('hidden')) closeCompareModal();
+      else closeDetail();
+    }
+  });
+}
+
+let currentView = 'table';
+
+function toggleView() {
+  currentView = currentView === 'table' ? 'annual' : 'table';
+  const isAnnual = currentView === 'annual';
+  document.getElementById('tableView').style.display = isAnnual ? 'none' : '';
+  document.getElementById('annualView').classList.toggle('hidden', !isAnnual);
+  if (isAnnual) renderAnnualView();
+}
+
+function renderAnnualView() {
+  const grid = document.getElementById('annualGrid');
+  const years = [...new Set(springFestivalMovies.map(m => m.year))].sort((a, b) => b - a);
+  grid.innerHTML = years.map(year => {
+    const movies = springFestivalMovies.filter(m => m.year === year);
+    const totalBox = movies.reduce((sum, m) => sum + (m.boxOffice > 0 ? m.boxOffice : 0), 0);
+    const champion = movies.reduce((best, m) => {
+      if (m.boxOffice > 0 && (!best || m.boxOffice > best.boxOffice)) return m;
+      return best;
+    }, null);
+    return `<div class="annual-card bg-white rounded-xl shadow-sm border border-gray-100 p-5 cursor-pointer hover:shadow-md transition-shadow" onclick="toggleYearExpand(${year})">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xl font-bold text-gray-800">${year} 年</h3>
+        <span class="text-sm text-gray-500">${movies.length} 部电影</span>
+      </div>
+      <div class="space-y-2 text-sm">
+        <div class="flex justify-between"><span class="text-gray-500">总票房</span><span class="text-gray-700 font-bold">${totalBox.toFixed(1)} 亿</span></div>
+        ${champion ? `<div class="flex justify-between items-start"><span class="text-gray-500 shrink-0">票房冠军</span><span class="text-red-500 font-bold text-right ml-2">${escapeHtml(champion.movieName)}<br/>${champion.boxOffice.toFixed(1)}亿</span></div>` : '<div class="text-gray-400 text-xs">暂无票房数据</div>'}
+      </div>
+      <div id="yearExpand_${year}" class="hidden mt-3 pt-3 border-t border-gray-100">
+        <ul class="space-y-1 text-sm">
+          ${movies.map(m => `<li class="flex justify-between text-gray-600 hover:text-gray-800 cursor-pointer" onclick="event.stopPropagation(); showDetail('${escapeHtml(m.movieName)}')"><span class="truncate">${escapeHtml(m.movieName)}</span><span class="shrink-0 ml-2">${m.boxOffice > 0 ? m.boxOffice.toFixed(1) + '亿' : m.boxOffice === 0 ? '撤档' : '-'}</span></li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleYearExpand(year) {
+  document.getElementById('yearExpand_' + year).classList.toggle('hidden');
+}
+
+function onYearChange(e) {
+  currentYear = e.target.value === 'all' ? 'all' : Number(e.target.value);
+  currentPage = 1;
+  renderTable();
+}
+
+function onSearchInput(e) {
+  searchKeyword = e.target.value.trim().toLowerCase();
+  currentPage = 1;
+  renderTable();
+}
+
+function onFavOnlyChange(e) {
+  onlyFav = e.target.checked;
+  currentPage = 1;
+  renderTable();
+}
+
+function onSelectAllChange(e) {
+  const checked = e.target.checked;
+  const list = getFilteredData();
+  if (checked) {
+    const toAdd = list.filter(m => !compareSet.has(m.movieName)).slice(0, 3 - compareSet.size);
+    toAdd.forEach(m => compareSet.add(m.movieName));
+  } else {
+    list.forEach(m => compareSet.delete(m.movieName));
+  }
+  renderTableBody(list.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE));
+  updateCompareBtn();
+}
+
+function getFilteredData() {
+  let list = [...springFestivalMovies];
+  if (currentYear !== 'all') list = list.filter(m => m.year === currentYear);
+  if (currentGenre !== 'all') list = list.filter(m => m.genre === currentGenre);
+  if (searchKeyword) {
+    if (searchMode === 'actor') list = list.filter(m => m.directorActor.toLowerCase().includes(searchKeyword));
+    else list = list.filter(m => m.movieName.toLowerCase().includes(searchKeyword));
+  }
+  if (onlyFav) list = list.filter(m => favorites.has(m.movieName));
+  const [field, dir] = currentSort.split('-');
+  list.sort((a, b) => {
+    if (field === 'year') return dir === 'desc' ? b.year - a.year : a.year - b.year;
+    const va = a.boxOffice === -1 ? -Infinity : a.boxOffice;
+    const vb = b.boxOffice === -1 ? -Infinity : b.boxOffice;
+    return dir === 'desc' ? vb - va : va - vb;
+  });
+  return list;
+}
+
+function posterHtml(movie, size) {
+  const dims = size === 'thumb' ? 'w-10 h-14' : 'w-40 h-56';
+  const rounded = size === 'thumb' ? 'rounded' : 'rounded-lg';
+  const name = escapeHtml(movie.movieName);
+  const colors = posterColors(movie.movieName);
+  const year = movie.year || '';
+  const rawName = escapeHtml(movie.movieName);
+  if (movie.poster && movie.poster.trim()) {
+    if (size === 'thumb') {
+      return `<img src="${escapeHtml(movie.poster.trim())}" alt="${name}" loading="lazy"
+        class="${dims} ${rounded} object-cover bg-gray-100 shrink-0"
+        data-pf-name="${name}" data-pf-dims="${dims}" data-pf-rounded="${rounded}"
+        data-pf-bg="${colors.bg}" data-pf-text="${colors.text}" data-pf-year="${year}"
+        data-pf-raw="${rawName}"
+        onerror="posterFallbackFromData(this)">`;
+    }
+    return `<img src="${escapeHtml(movie.poster.trim())}" alt="${name}" loading="lazy"
+      class="${dims} ${rounded} object-cover bg-gray-100 shrink-0 cursor-zoom-in"
+      data-pf-name="${name}" data-pf-dims="${dims}" data-pf-rounded="${rounded}"
+      data-pf-bg="${colors.bg}" data-pf-text="${colors.text}" data-pf-year="${year}"
+      data-pf-raw="${rawName}"
+      onclick="event.stopPropagation();openPosterLightbox(this.dataset.pfRaw)"
+      onerror="posterFallbackFromData(this)">`;
+  }
+  if (size === 'thumb') {
+    return posterFallbackHtml(name, dims, rounded, colors.bg, colors.text, year, rawName, false);
+  }
+  return posterFallbackHtml(name, dims, rounded, colors.bg, colors.text, year, rawName, true);
+}
+
+function posterFallbackFromData(el) {
+  const d = el.dataset;
+  el.replaceWith(posterFallbackEl(d.pfName, d.pfDims, d.pfRounded, d.pfBg, d.pfText, d.pfYear, d.pfRaw));
+}
+
+function posterFallbackHtml(name, dims, rounded, bg, text, year, rawName, clickable) {
+  const isThumb = dims === 'w-10 h-14';
+  const displayName = isThumb ? (name.length > 4 ? name.slice(0, 4) : name) : (name.length > 6 ? name.slice(0, 6) : name);
+  const fontSize = isThumb ? '8px' : name.length > 4 ? '13px' : '15px';
+  const yearSize = isThumb ? '7px' : '10px';
+  const iconSize = isThumb ? '12px' : '24px';
+  const clickAttr = clickable ? ` data-pf-raw="${rawName}" onclick="event.stopPropagation();openPosterLightbox(this.dataset.pfRaw)"` : '';
+  return `<div class="${dims} ${rounded} shrink-0 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden${clickable ? ' cursor-zoom-in' : ''}" style="background:${bg};color:${text}"${clickAttr}>
+    <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 40%,rgba(0,0,0,0.15) 100%)"></div>
+    <svg style="width:${iconSize};height:${iconSize};opacity:0.25;margin-bottom:2px" fill="currentColor" viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>
+    <span style="font-size:${fontSize};font-weight:700;line-height:1.2;z-index:1">${displayName}</span>
+    ${!isThumb && year ? `<span style="font-size:${yearSize};opacity:0.6;margin-top:2px;z-index:1">${year}</span>` : ''}
+  </div>`;
+}
+
+function posterFallbackEl(name, dims, rounded, bg, text, year, rawName) {
+  const isThumb = dims === 'w-10 h-14';
+  const displayName = isThumb ? (name.length > 4 ? name.slice(0, 4) : name) : (name.length > 6 ? name.slice(0, 6) : name);
+  const fontSize = isThumb ? '8px' : name.length > 4 ? '13px' : '15px';
+  const yearSize = isThumb ? '7px' : '10px';
+  const iconSize = isThumb ? '12px' : '24px';
+  const clickable = !isThumb;
+  const div = document.createElement('div');
+  div.className = dims + ' ' + rounded + ' shrink-0 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden' + (clickable ? ' cursor-zoom-in' : '');
+  div.style.background = bg;
+  div.style.color = text;
+  if (clickable) {
+    div.dataset.pfRaw = rawName;
+    div.setAttribute('onclick', "event.stopPropagation();openPosterLightbox(this.dataset.pfRaw)");
+  }
+  div.innerHTML = `<div style="position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 40%,rgba(0,0,0,0.15) 100%)"></div>
+    <svg style="width:${iconSize};height:${iconSize};opacity:0.25;margin-bottom:2px" fill="currentColor" viewBox="0 0 24 24"><path d="M18 3v2h-2V3H8v2H6V3H4v18h2v-2h2v2h8v-2h2v2h2V3h-2zM8 17H6v-2h2v2zm0-4H6v-2h2v2zm0-4H6V7h2v2zm10 8h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2V7h2v2z"/></svg>
+    <span style="font-size:${fontSize};font-weight:700;line-height:1.2;z-index:1">${displayName}</span>
+    ${!isThumb && year ? `<span style="font-size:${yearSize};opacity:0.6;margin-top:2px;z-index:1">${year}</span>` : ''}`;
+  return div;
+}
+
+function posterColors(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); hash |= 0; }
+  const h = Math.abs(hash) % 360;
+  const bg = `linear-gradient(135deg, hsl(${h},60%,45%), hsl(${(h+30)%360},50%,30%))`;
+  return { bg, text: '#ffffff' };
+}
+
+function renderPosterCanvas(movie, w, h) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const colors = posterColors(movie.movieName);
+  const bgMatch = colors.bg.match(/hsl\((\d+)/);
+  const hue = bgMatch ? parseInt(bgMatch[1]) : 200;
+  const grd = ctx.createLinearGradient(0, 0, w, h);
+  grd.addColorStop(0, `hsl(${hue},55%,40%)`);
+  grd.addColorStop(1, `hsl(${(hue+30)%360},50%,25%)`);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, w, h);
+  const overlay = ctx.createLinearGradient(0, 0, 0, h);
+  overlay.addColorStop(0, 'rgba(255,255,255,0.06)');
+  overlay.addColorStop(0.4, 'rgba(0,0,0,0)');
+  overlay.addColorStop(1, 'rgba(0,0,0,0.2)');
+  ctx.fillStyle = overlay;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.font = `${w*0.35}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('\uD83C\uDFAC', w/2, h*0.38);
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  const name = movie.movieName;
+  const maxChars = Math.floor(w / (h * 0.08));
+  const displayName = name.length > maxChars ? name.slice(0, maxChars) : name;
+  ctx.font = `bold ${h*0.07}px "PingFang SC","Microsoft YaHei",sans-serif`;
+  const lines = [];
+  let remaining = displayName;
+  while (remaining.length > 0) {
+    lines.push(remaining.slice(0, Math.ceil(remaining.length / Math.max(1, Math.ceil(remaining.length / maxChars)))));
+    remaining = remaining.slice(lines[lines.length-1].length);
+  }
+  const lineH = h * 0.085;
+  const startY = h * 0.52 - (lines.length - 1) * lineH / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, w/2, startY + i * lineH);
+  });
+  if (movie.year) {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.font = `${h*0.04}px "PingFang SC","Microsoft YaHei",sans-serif`;
+    ctx.fillText(movie.year, w/2, h * 0.52 + lines.length * lineH + h*0.02);
+  }
+  if (movie.doubanRating > 0) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = `${h*0.035}px "PingFang SC","Microsoft YaHei",sans-serif`;
+    ctx.fillText('\u2B50 ' + movie.doubanRating.toFixed(1), w/2, h * 0.82);
+  }
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
+function openPosterLightbox(movieName) {
+  const movie = springFestivalMovies.find(m => m.movieName === movieName);
+  if (!movie) return;
+  const img = document.getElementById('lightboxImg');
+  if (movie.poster && movie.poster.trim()) {
+    img.src = movie.poster.trim().replace('/l_ratio_poster/', '/l/');
+  } else {
+    img.src = renderPosterCanvas(movie, 400, 560);
+  }
+  img.alt = movie.movieName + ' 海报';
+  document.getElementById('lightboxOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderTable() {
+  const list = getFilteredData();
+  const totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  renderTableBody(list.slice(start, start + PAGE_SIZE));
+  renderPagination(list.length, totalPages);
+  renderStats(list);
+  updateChart(list);
+  updateCompareBtn();
+}
+
+function renderTableBody(pageData) {
+  const tbody = document.getElementById('tableBody');
+  if (pageData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-10 text-center text-gray-400">没有找到匹配的电影记录</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pageData.map(m => {
+    const boxText = m.boxOffice === -1 ? '<span class="text-gray-400 text-sm">暂无</span>'
+      : m.boxOffice === 0 ? '<span class="text-red-500 text-sm">撤档/未上映</span>'
+      : (m.boxOffice >= 30 ? '<span class="text-red-500 font-bold">' + m.boxOffice.toFixed(2) + ' 亿</span>' : m.boxOffice.toFixed(2) + ' 亿');
+    const isFav = favorites.has(m.movieName);
+    const isCompared = compareSet.has(m.movieName);
+    return `<tr class="movie-row hover:bg-gray-50 border-b border-gray-100 transition-colors">
+      <td class="px-2 py-2 text-center"><input type="checkbox" class="compare-cb w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand/30 accent-red-500 cursor-pointer" data-name="${escapeHtml(m.movieName)}" ${isCompared ? 'checked' : ''} onchange="toggleCompare('${escapeHtml(m.movieName)}')"></td>
+      <td class="px-2 py-2 hidden sm:table-cell cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')">${posterHtml(m, 'thumb')}</td>
+      <td class="px-3 py-3 text-sm font-medium text-gray-800 whitespace-nowrap cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')">${escapeHtml(m.movieName)}</td>
+      <td class="px-3 py-3 text-sm text-gray-500 whitespace-nowrap cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')">${m.year}-${m.releaseDate}</td>
+      <td class="px-3 py-3 text-sm text-gray-600 max-w-[120px] truncate cursor-pointer" title="${escapeHtml(m.directorActor)}" onclick="showDetail('${escapeHtml(m.movieName)}')">${escapeHtml(m.directorActor)}</td>
+      <td class="px-3 py-3 text-sm text-gray-500 cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')"><span class="inline-block bg-gray-100 rounded px-2 py-0.5 text-xs">${escapeHtml(m.genre)}</span></td>
+      <td class="px-3 py-3 text-sm text-center whitespace-nowrap cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')">${m.doubanRating > 0 ? `<span class="${m.doubanRating >= 8 ? 'text-amber-600 font-bold' : 'text-gray-600'}">⭐ ${m.doubanRating.toFixed(1)}</span>` : '<span class="text-gray-400">-</span>'}</td>
+      <td class="px-3 py-3 text-sm text-gray-700 text-right whitespace-nowrap cursor-pointer" onclick="showDetail('${escapeHtml(m.movieName)}')">${boxText}</td>
+      <td class="px-3 py-3 text-sm text-gray-400 max-w-[100px] truncate hidden sm:table-cell cursor-pointer" title="${escapeHtml(m.remark)}" onclick="showDetail('${escapeHtml(m.movieName)}')">${escapeHtml(m.remark || '-')}</td>
+      <td class="px-2 py-2 text-center"><button onclick="toggleFavorite('${escapeHtml(m.movieName)}')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" title="${isFav ? '取消收藏' : '收藏'}"><svg class="w-5 h-5 ${isFav ? 'text-red-500' : 'text-gray-300'} transition-colors" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPagination(total, totalPages) {
+  const container = document.getElementById('pagination');
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+  let html = `<button ${currentPage === 1 ? 'disabled' : ''} class="px-3 py-1 rounded border text-sm ${currentPage === 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}" onclick="goPage(${currentPage - 1})">◀</button>`;
+  const maxShow = 5;
+  let start = Math.max(1, currentPage - Math.floor(maxShow / 2));
+  let end = Math.min(totalPages, start + maxShow - 1);
+  if (end - start < maxShow - 1) start = Math.max(1, end - maxShow + 1);
+  if (start > 1) {
+    html += `<button class="px-3 py-1 rounded border text-sm text-gray-500 border-gray-300 hover:bg-gray-100" onclick="goPage(1)">1</button>`;
+    if (start > 2) html += '<span class="px-1 text-gray-400">…</span>';
+  }
+  for (let i = start; i <= end; i++) {
+    html += `<button class="px-3 py-1 rounded border text-sm font-medium ${i === currentPage ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}" onclick="goPage(${i})">${i}</button>`;
+  }
+  if (end < totalPages) {
+    if (end < totalPages - 1) html += '<span class="px-1 text-gray-400">…</span>';
+    html += `<button class="px-3 py-1 rounded border text-sm text-gray-500 border-gray-300 hover:bg-gray-100" onclick="goPage(${totalPages})">${totalPages}</button>`;
+  }
+  html += `<button ${currentPage === totalPages ? 'disabled' : ''} class="px-3 py-1 rounded border text-sm ${currentPage === totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-gray-600 border-gray-300 hover:bg-gray-100'}" onclick="goPage(${currentPage + 1})">▶</button>`;
+  container.innerHTML = html;
+}
+
+function renderStats(list) {
+  const total = list.length;
+  const valid = list.filter(m => m.boxOffice > 0);
+  const totalBox = valid.reduce((s, m) => s + m.boxOffice, 0);
+  const avg = valid.length > 0 ? totalBox / valid.length : 0;
+  const champion = valid.length > 0 ? valid.reduce((a, b) => a.boxOffice > b.boxOffice ? a : b) : null;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statBoxOffice').textContent = totalBox.toFixed(1) + ' 亿';
+  document.getElementById('statChampion').textContent = champion ? champion.movieName + ' ' + champion.boxOffice.toFixed(1) + '亿' : '-';
+  document.getElementById('statAvg').textContent = avg.toFixed(1) + ' 亿';
+  document.getElementById('resultCount').textContent = `共 ${total} 条记录`;
+}
+
+function goPage(page) {
+  const totalPages = Math.ceil(getFilteredData().length / PAGE_SIZE) || 1;
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  renderTable();
+  document.getElementById('resultCount').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showDetail(movieName) {
+  const movie = springFestivalMovies.find(m => m.movieName === movieName);
+  if (!movie) return;
+  document.getElementById('modalTitle').textContent = movie.movieName;
+  const isFav = favorites.has(movie.movieName);
+  const doubanHtml = movie.doubanRating > 0 ? `
+    <div class="douban-card bg-gradient-to-b from-amber-50 to-white border border-amber-100 rounded-xl p-4 mt-3 w-full text-center">
+      <div class="text-xs text-gray-400 mb-1">豆瓣评分</div>
+      <div class="text-3xl font-bold ${movie.doubanRating >= 8 ? 'text-amber-600' : 'text-gray-700'}">${movie.doubanRating.toFixed(1)}</div>
+      <div class="text-xs text-gray-400 mt-0.5">${movie.doubanVotes || ''}</div>
+      ${movie.doubanReviews && movie.doubanReviews.length ? `<div id="reviewCarousel" class="relative mt-3 overflow-hidden" style="height:36px"><div id="reviewTrack" class="transition-transform duration-500 ease-in-out">${movie.doubanReviews.map(r => `<div class="h-9 flex items-center justify-center px-2"><span class="text-xs text-gray-500 italic leading-snug text-center line-clamp-2">"${escapeHtml(r)}"</span></div>`).join('')}</div></div>` : ''}
+    </div>` : `<div class="douban-card bg-gray-50 border border-gray-100 rounded-xl p-4 mt-3 w-full text-center"><div class="text-xs text-gray-400 mb-1">豆瓣评分</div><div class="text-sm text-gray-400">暂无数据</div></div>`;
+  document.getElementById('modalContent').innerHTML = `
+    <div class="flex flex-col sm:flex-row gap-5">
+      <div class="flex flex-col items-center shrink-0">
+        <div class="cursor-zoom-in group relative" onclick="openPosterLightbox('${escapeHtml(movie.movieName)}')" title="点击查看大图">
+          ${posterHtml(movie, 'large')}
+          <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center pointer-events-none"><span class="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-full px-3 py-1">点击放大</span></div>
+        </div>
+        ${doubanHtml}
+      </div>
+      <div class="space-y-3 text-sm flex-1">
+        <div class="flex items-center justify-between">
+          <div class="flex"><span class="text-gray-400 w-20 shrink-0">上映日期</span><span class="text-gray-700">${movie.year}年${movie.releaseDate}</span></div>
+          <button onclick="toggleFavorite('${escapeHtml(movie.movieName)}');showDetail('${escapeHtml(movie.movieName)}')" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors shrink-0" title="${isFav ? '取消收藏' : '收藏'}">
+            <svg class="w-6 h-6 ${isFav ? 'text-red-500' : 'text-gray-300'} transition-colors" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </button>
+        </div>
+        <div class="flex"><span class="text-gray-400 w-20 shrink-0">导演/主演</span><span class="text-gray-700">${escapeHtml(movie.directorActor)}</span></div>
+        <div class="flex"><span class="text-gray-400 w-20 shrink-0">类型</span><span class="text-gray-700">${escapeHtml(movie.genre)}</span></div>
+        <div class="flex"><span class="text-gray-400 w-20 shrink-0">票房</span><span class="text-gray-700 font-bold">${movie.boxOffice === -1 ? '暂无数据' : movie.boxOffice === 0 ? '撤档 / 未上映' : movie.boxOffice.toFixed(2) + ' 亿元'}</span></div>
+        <div class="flex"><span class="text-gray-400 w-20 shrink-0">备注</span><span class="text-gray-700">${escapeHtml(movie.remark || '无')}</span></div>
+        ${movie.synopsis ? `<div class="pt-2 border-t border-gray-100"><div class="text-gray-400 text-xs mb-1">简介</div><p class="text-gray-600 text-sm leading-relaxed">${escapeHtml(movie.synopsis)}</p></div>` : ''}
+      </div>
+    </div>`;
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  const track = document.getElementById('reviewTrack');
+  if (track && track.children.length > 1) {
+    let idx = 0;
+    const total = track.children.length;
+    setInterval(() => { idx = (idx + 1) % total; track.style.transform = 'translateY(-' + idx * 36 + 'px)'; }, 3500);
+  }
+}
+
+function closeDetail() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function openLightbox(posterUrl) {
+  const img = document.getElementById('lightboxImg');
+  img.src = posterUrl.replace('/l_ratio_poster/', '/l/');
+  img.alt = '海报大图';
+  document.getElementById('lightboxOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightboxOverlay').classList.add('hidden');
+  if (document.getElementById('modalOverlay').classList.contains('hidden')) document.body.style.overflow = '';
+}
+
+function exportCSV() {
+  const list = getFilteredData();
+  if (list.length === 0) { alert('当前没有可导出的数据'); return; }
+  const headers = ['年份', '片名', '上映日期', '导演/主演', '类型', '豆瓣评分', '票房(亿元)', '备注'];
+  const sorted = [...list].sort((a, b) => a.year - b.year || b.boxOffice - a.boxOffice);
+  const rows = sorted.map(m => [m.year, m.movieName, m.year + '-' + m.releaseDate, m.directorActor, m.genre, m.doubanRating > 0 ? m.doubanRating : '暂无', m.boxOffice === -1 ? '暂无' : m.boxOffice, m.remark].map(field => {
+    const str = String(field);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) return '"' + str.replace(/"/g, '""') + '"';
+    return str;
+  }).join(','));
+  const csv = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '春节档电影数据_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function toggleFavorite(name) {
+  if (favorites.has(name)) favorites.delete(name);
+  else favorites.add(name);
+  localStorage.setItem('springFestivalFavorites', JSON.stringify([...favorites]));
+  renderTable();
+}
+
+function toggleCompare(name) {
+  if (compareSet.has(name)) compareSet.delete(name);
+  else {
+    if (compareSet.size >= 3) { alert('最多选择3部电影进行对比'); renderTableBody(getFilteredData().slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)); return; }
+    compareSet.add(name);
+  }
+  updateCompareBtn();
+}
+
+function updateCompareBtn() {
+  const btn = document.getElementById('compareBtn');
+  const countEl = document.getElementById('compareCount');
+  if (compareSet.size >= 2) { btn.classList.remove('hidden'); btn.classList.add('inline-flex'); countEl.textContent = `(${compareSet.size})`; }
+  else { btn.classList.add('hidden'); btn.classList.remove('inline-flex'); }
+}
+
+function openCompareModal() {
+  const movies = [...compareSet].map(name => springFestivalMovies.find(m => m.movieName === name)).filter(Boolean);
+  if (movies.length < 2) return;
+  const content = document.getElementById('compareContent');
+  const cols = movies.map(m => {
+    const boxText = m.boxOffice === -1 ? '暂无数据' : m.boxOffice === 0 ? '撤档/未上映' : m.boxOffice.toFixed(2) + ' 亿元';
+    return `<div class="flex flex-col items-center text-center min-w-[180px] flex-1 px-2">
+      <div class="mb-3">${posterHtml(m, 'large')}</div>
+      <h4 class="font-bold text-gray-800 text-base mb-2">${escapeHtml(m.movieName)}</h4>
+      <div class="w-full text-left space-y-2 text-sm">
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">年份</span><span class="text-gray-700">${m.year}</span></div>
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">日期</span><span class="text-gray-700">${m.releaseDate}</span></div>
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">票房</span><span class="text-gray-700 font-bold">${boxText}</span></div>
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">导演</span><span class="text-gray-700">${escapeHtml(m.directorActor)}</span></div>
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">类型</span><span class="text-gray-700">${escapeHtml(m.genre)}</span></div>
+        <div class="flex"><span class="text-gray-400 w-16 shrink-0">备注</span><span class="text-gray-700">${escapeHtml(m.remark || '无')}</span></div>
+      </div>
+    </div>`;
+  });
+  content.innerHTML = `<div class="flex gap-4 justify-center">${cols.join('<div class="w-px bg-gray-200 shrink-0"></div>')}</div>`;
+  document.getElementById('compareOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompareModal() {
+  document.getElementById('compareOverlay').classList.add('hidden');
+  if (document.getElementById('modalOverlay').classList.contains('hidden')) document.body.style.overflow = '';
+}
+
+let chartYearMovies = {};
+
+function initChart() {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: '总票房（亿元）', data: [], borderColor: '#c41e3a', backgroundColor: 'rgba(196, 30, 58, 0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#c41e3a', pointRadius: 4, pointHoverRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: items => items[0].label + ' 年春节档', label: item => {
+      const year = item.label;
+      const total = item.parsed.y.toFixed(2);
+      const movies = chartYearMovies[year] || [];
+      const lines = ['总票房: ' + total + ' 亿元'];
+      movies.forEach(m => {
+        lines.push('  ' + m.name + '  ' + m.box.toFixed(2) + '亿');
+      });
+      return lines;
+    } } }, scales: { x: { grid: { display: false }, ticks: { color: '#6b7280', font: { size: 11 } } }, y: { beginAtZero: true, ticks: { color: '#6b7280', font: { size: 11 }, callback: v => v + '亿' }, grid: { color: 'rgba(0,0,0,0.05)' } } } } }
+  });
+  updateChart(getFilteredData());
+}
+
+function updateChart(list) {
+  if (!trendChart) return;
+  const yearMap = {};
+  chartYearMovies = {};
+  list.forEach(m => {
+    if (m.boxOffice > 0) {
+      yearMap[m.year] = (yearMap[m.year] || 0) + m.boxOffice;
+      if (!chartYearMovies[m.year]) chartYearMovies[m.year] = [];
+      chartYearMovies[m.year].push({ name: m.movieName, box: m.boxOffice });
+    }
+  });
+  Object.keys(chartYearMovies).forEach(y => {
+    chartYearMovies[y].sort((a, b) => b.box - a.box);
+  });
+  const years = Object.keys(yearMap).sort();
+  const card = document.getElementById('chartCard');
+  if (years.length === 0) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  trendChart.data.labels = years;
+  trendChart.data.datasets[0].data = years.map(y => +yearMap[y].toFixed(2));
+  trendChart.update();
+}
+</script>
+</body>
+</html>
