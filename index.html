@@ -522,11 +522,7 @@ function posterHtml(movie, size) {
   if (movie.poster && movie.poster.trim()) {
     if (size === 'thumb') {
       return `<img src="${escapeHtml(movie.poster.trim())}" alt="${name}" loading="lazy"
-        class="${dims} ${rounded} object-cover bg-gray-100 shrink-0"
-        data-pf-name="${name}" data-pf-dims="${dims}" data-pf-rounded="${rounded}"
-        data-pf-bg="${colors.bg}" data-pf-text="${colors.text}" data-pf-year="${year}"
-        data-pf-raw="${rawName}"
-        onerror="posterFallbackFromData(this)">`;
+        class="${dims} ${rounded} object-cover bg-gray-100 shrink-0">`;
     }
     return `<img src="${escapeHtml(movie.poster.trim())}" alt="${name}" loading="lazy"
       class="${dims} ${rounded} object-cover bg-gray-100 shrink-0 cursor-zoom-in"
